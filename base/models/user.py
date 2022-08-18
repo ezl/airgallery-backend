@@ -17,7 +17,12 @@ class UserManager(BaseUserManager):
         return user
 
 class User(AbstractBaseUser):
+    first_name = models.CharField(max_length=250)
+    last_name = models.CharField(max_length=250)
     email = models.EmailField(unique=True)
+    profile_picture_url = models.CharField(max_length=250)
+    auth_provider_name = models.CharField(max_length=250)
+    auth_provider_user_id = models.CharField(max_length=250)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -26,4 +31,9 @@ class User(AbstractBaseUser):
     objects = UserManager()
     
     class Meta():
-        db_table = 'users'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['auth_provider_name', 'auth_provider_user_id'],
+                name='users.auth_provider_name_auth_provider_user_id_unique'
+            )
+        ]
