@@ -5,6 +5,9 @@ import requests
 from base.models import User, StorageBackend
 from rest_framework_simplejwt.tokens import RefreshToken
 import environ
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
+from ..helpers import get_drive_service
 
 env = environ.Env() 
 
@@ -102,10 +105,42 @@ class ConnectStorageBackend(APIView):
             'refresh_token': grant['refresh_token'],
         }
         
+        folder_id = self.create_root_folder(
+            grant['access_token'],
+            grant['refresh_token'],
+        )
+        
+        if folder_id is None:
+            print('Could not create root folder')
+            return
+        
         storage_backend = StorageBackend()
         storage_backend.name = name
         storage_backend.meta = meta
+        storage_backend.root_folder_id = folder_id
         storage_backend.user = user
         storage_backend.save()
         
         return storage_backend
+    
+    def create_root_folder(self, access_token, refresh_token):
+        """
+        Create a folder in this user’s Drive, this root folder will 
+        contain subfolders for each of their galleries 
+        """
+        service = get_drive_service(access_token, refresh_token)
+
+        file_metadata = {
+            'name': 'universal-photo-gallery',
+            'mimeType': 'application/vnd.google-apps.folder'
+        }
+        
+        folder = service.files().create(body=file_metadata, fields='id').execute()
+        
+        if folder is None:
+            return
+        
+        print('Created root folder:')
+        print(folder)
+        
+        return folder['id']
