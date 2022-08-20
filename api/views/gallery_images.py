@@ -1,34 +1,21 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from base.models import Gallery
-from ..helpers import get_drive_service
+from ..helpers import fetchGalleryImages
 
 class GalleryImages(APIView):
+    authentication_classes = []
+    permission_classes = []
+    
     def get(self, request, id):
-        gallery = Gallery.objects.filter(id=id).prefetch_related('storage_backend').first()
-        # The default gallery has not been created yet
+        gallery = Gallery.objects.filter(
+            id=id,
+            published_at__isnull=False
+        ).prefetch_related('storage_backend').first()
+        
         if gallery is None:
             return Response(data=[])
-        
-        files = self.fetch(gallery)
+            
+        files = fetchGalleryImages(gallery)
         
         return Response(data=files)
-    
-    def fetch(self, gallery):
-        """
-        Retrieve image files from this gallery’s folder 
-        """
-        
-        service = get_drive_service(
-            gallery.storage_backend.meta['access_token'],
-            gallery.storage_backend.meta['refresh_token'],
-        )
-        
-        query = f"parents = '{gallery.folder_id}'"
-        fields = 'files(id, name, imageMediaMetadata, thumbnailLink)'
-
-        res = service.files().list(q=query, fields=fields).execute()
-        
-        files = res.get('files', [])
-        
-        return files

@@ -19,7 +19,6 @@ def get_drive_service(access_token, refresh_token):
     return service
 
 
-
 def get_mime_type(file):
     """
     Get MIME by reading the header of the file
@@ -29,3 +28,43 @@ def get_mime_type(file):
     mime_type = magic.from_buffer(file.read(2048), mime=True)
     file.seek(initial_pos)
     return mime_type
+
+def fetchGalleryImages(gallery):
+    """
+    Retrieve image files from this gallery’s folder 
+    """
+    
+    service = get_drive_service(
+        gallery.storage_backend.meta['access_token'],
+        gallery.storage_backend.meta['refresh_token'],
+    )
+    
+    query = f"parents = '{gallery.folder_id}'"
+    fields = 'files(id, name, imageMediaMetadata, thumbnailLink)'
+
+    res = service.files().list(q=query, fields=fields).execute()
+    
+    files = res.get('files', [])
+    
+    return files
+
+def drive_create_folder(name, access_token, refresh_token, parent=None):
+    service = get_drive_service(
+        access_token,
+        refresh_token,
+    )
+
+    file_metadata = {
+        'name': name,
+        'mimeType': 'application/vnd.google-apps.folder',
+    }
+    
+    if parent is not None:
+        file_metadata['parents'] = [parent]
+    
+    folder = service.files().create(body=file_metadata, fields='id').execute()
+    
+    print('Created folder for the new gallery:')
+    print(folder)
+    
+    return folder['id']

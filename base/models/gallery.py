@@ -4,6 +4,8 @@ from django.utils import timezone
 class Gallery(models.Model):
     name = models.CharField(max_length=250)
     folder_id = models.CharField(max_length=250)
+    slug = models.CharField(max_length=250)
+    published_at = models.DateTimeField(blank=True, null=True)
     storage_backend = models.ForeignKey(to='base.StorageBackend', on_delete = models.CASCADE)
     user = models.ForeignKey(to='base.User', on_delete = models.CASCADE)
     created_at = models.DateTimeField(default=timezone.now)

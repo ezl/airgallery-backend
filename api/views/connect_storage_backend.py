@@ -2,12 +2,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 import requests
-from base.models import User, StorageBackend
+from base.models import User, StorageBackend, Gallery
 from rest_framework_simplejwt.tokens import RefreshToken
 import environ
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-from ..helpers import get_drive_service
+from ..helpers import get_drive_service, drive_create_folder
+import uuid
 
 env = environ.Env() 
 
@@ -29,12 +30,12 @@ class ConnectStorageBackend(APIView):
         
         user = self.find_or_create_user('google', user_info)
         
-        self.create_backend_storagr_if_new(
+        self.create_backend_storage_if_new(
             'google-drive',
             user,
             grant
         )
-                
+        
         refreshToken = RefreshToken.for_user(user)
     
         return Response({
@@ -94,7 +95,7 @@ class ConnectStorageBackend(APIView):
 
         return user
     
-    def create_backend_storagr_if_new(self, name, user, grant):
+    def create_backend_storage_if_new(self, name, user, grant):
         already_connected = StorageBackend.objects.filter(user__id=user.id).exists()
         
         if already_connected:
@@ -105,7 +106,8 @@ class ConnectStorageBackend(APIView):
             'refresh_token': grant['refresh_token'],
         }
         
-        folder_id = self.create_root_folder(
+        folder_id = drive_create_folder(
+            'universal-photo-gallery', 
             grant['access_token'],
             grant['refresh_token'],
         )
@@ -121,26 +123,28 @@ class ConnectStorageBackend(APIView):
         storage_backend.user = user
         storage_backend.save()
         
+        self.create_gallery(storage_backend, user)
+        
         return storage_backend
-    
-    def create_root_folder(self, access_token, refresh_token):
-        """
-        Create a folder in this user’s Drive, this root folder will 
-        contain subfolders for each of their galleries 
-        """
-        service = get_drive_service(access_token, refresh_token)
 
-        file_metadata = {
-            'name': 'universal-photo-gallery',
-            'mimeType': 'application/vnd.google-apps.folder'
-        }
+    def create_gallery(self, storage_backend, user):
         
-        folder = service.files().create(body=file_metadata, fields='id').execute()
+        gallery = Gallery()
+        gallery.name = 'My gallery' # Default gallery, for now
+        gallery.slug = uuid.uuid4()
+        gallery.storage_backend = storage_backend
+        gallery.user = user
+        # Create a folder for this gallery as a subfolder of the root folder
+        folder_id = drive_create_folder(
+            gallery.name, 
+            storage_backend.meta['access_token'],
+            storage_backend.meta['refresh_token'],
+            storage_backend.root_folder_id
+        )
         
-        if folder is None:
+        if folder_id is None:
+            print('Could not create folder for new gallery')
             return
         
-        print('Created root folder:')
-        print(folder)
-        
-        return folder['id']
+        gallery.folder_id = folder_id
+        gallery.save()

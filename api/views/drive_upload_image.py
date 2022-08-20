@@ -1,17 +1,20 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import status
 from base.models import User, StorageBackend, Gallery, Image
-from ..helpers import get_drive_service, get_mime_type
+from ..helpers import get_drive_service, get_mime_type, drive_create_folder
 import io
 
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseUpload
 
 class DriveUploadImage(APIView):
     def put(self, request):
-        gallery = self.get_or_create_gallery(request.user)
+        gallery = Gallery.objects.filter(user__id=request.user.id).prefetch_related('storage_backend').first()
+        
+        if gallery is None:
+            return Response('Default gallery not found', status=status.HTTP_404_NOT_FOUND)
+        
         file = request.FILES['image'] 
         
         new_file = self.upload(gallery, file)
@@ -19,50 +22,6 @@ class DriveUploadImage(APIView):
         self.create_image(gallery, new_file)
         
         return Response(data=new_file)
-        
-    def get_or_create_gallery(self, user):
-        gallery = Gallery.objects.filter(user__id=user.id).prefetch_related('storage_backend').first()
-        
-        if gallery is None:
-            storage_backend = StorageBackend.objects.filter(user__id=user.id).first()
-            
-            gallery = Gallery()
-            gallery.name = 'My gallery' # Default gallery, for now
-            gallery.storage_backend = storage_backend
-            gallery.user = user
-            # Create a folder for this gallery as a subfolder of the root folder
-            folder_id = self.create_gallery_folder(gallery.name, storage_backend)
-            
-            if folder_id is None:
-                print('Could not create folder for new gallery')
-                return
-            
-            gallery.folder_id = folder_id
-            gallery.save()
-        
-        print('gallery:')
-        print(gallery)
-        
-        return gallery
-    
-    def create_gallery_folder(self, name, storage_backend):
-        service = get_drive_service(
-            storage_backend.meta['access_token'],
-            storage_backend.meta['refresh_token'],
-        )
-
-        file_metadata = {
-            'name': name,
-            'mimeType': 'application/vnd.google-apps.folder',
-            'parents': [storage_backend.root_folder_id]
-        }
-        
-        folder = service.files().create(body=file_metadata, fields='id').execute()
-        
-        print('Created folder for the new gallery:')
-        print(folder)
-        
-        return folder['id']
     
     def upload(self, gallery, target_file):
         try:
