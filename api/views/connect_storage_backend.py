@@ -22,6 +22,16 @@ class ConnectStorageBackend(APIView):
         
         if grant is None:
             return Response('Invalid code', status=status.HTTP_400_BAD_REQUEST)
+        
+        # Let the client know the user didn’t grant us access to his Drive
+        if 'https://www.googleapis.com/auth/drive' not in grant['scope']:
+            return Response(
+                {
+                'missing_permission_google_dive': True,
+                },
+                 status=status.HTTP_400_BAD_REQUEST
+            )
+ 
     
         user_info = self.get_user_info(grant['access_token'])
         
@@ -101,11 +111,6 @@ class ConnectStorageBackend(APIView):
         if already_connected:
             return
         
-        meta = {
-            'access_token': grant['access_token'],
-            'refresh_token': grant['refresh_token'],
-        }
-        
         folder_id = drive_create_folder(
             'universal-photo-gallery', 
             grant['access_token'],
@@ -118,7 +123,7 @@ class ConnectStorageBackend(APIView):
         
         storage_backend = StorageBackend()
         storage_backend.name = name
-        storage_backend.meta = meta
+        storage_backend.meta = grant
         storage_backend.root_folder_id = folder_id
         storage_backend.user = user
         storage_backend.save()
