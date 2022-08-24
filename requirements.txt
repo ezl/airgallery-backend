@@ -27,7 +27,6 @@ pyasn1-modules==0.2.8
 PyJWT==2.4.0
 pyparsing==3.0.9
 python-magic==0.4.27
-python-magic-bin==0.4.14
 pytz==2022.2.1
 PyYAML==6.0
 regex==2022.4.24
