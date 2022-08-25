@@ -31,7 +31,7 @@ DEBUG = str(env('DJANGO_DEBUG')) == '1'
 
 ALLOWED_HOSTS = []
 if not DEBUG:
-    ALLOWED_HOSTS += [env('DJANGO_ALLOWED_HOSTS')]
+    ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS')
 
 
 
