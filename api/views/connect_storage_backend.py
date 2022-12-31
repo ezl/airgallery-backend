@@ -132,10 +132,10 @@ class ConnectStorageBackend(APIView):
         
         return storage_backend
 
-    def create_gallery(self, storage_backend, user):
+    def create_gallery(self, storage_backend, user, gallery_name='My Gallery'):
         
         gallery = Gallery()
-        gallery.name = 'My gallery' # Default gallery, for now
+        gallery.name = gallery_name
         gallery.slug = uuid.uuid4()
         gallery.storage_backend = storage_backend
         gallery.user = user
