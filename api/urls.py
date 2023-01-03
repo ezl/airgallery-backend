@@ -1,13 +1,39 @@
 from django.urls import path
-from . import views
 
-urlpatterns = [
-    path('storage-backends/connect', views.ConnectStorageBackend.as_view()),
-    path('upload/drive', views.DriveUploadImage.as_view()),
-    path('galleries/by-slug/<str:slug>', views.SingleGallery.as_view()),
-    path('galleries/<int:id>/toggle-publication', views.ToggleGalleryPublication.as_view()),
-    path('galleries/<int:id>/images', views.GalleryImages.as_view()),
-    path('auth/user', views.CurrentUser.as_view()),
-    path('auth/user/gallery', views.CurrentUserGallery.as_view()),
-    path('auth/user/gallery/images', views.CurrentUserGalleryImages.as_view())
+from rest_framework import routers
+
+from api.views.connect_storage_backend import ConnectStorageBackend
+from api.views.current_user import CurrentUser
+from api.views.drive_upload_image import DriveUploadImage
+from api.views.gallery_images import GalleryImages
+from api.views.single_gallery import SingleGallery
+from api.views.current_user_gallery import CurrentUserGallery
+from api.views.current_user_gallery_images import CurrentUserGalleryImages
+from api.views.toggle_gallery_publication import ToggleGalleryPublication
+from api.views.gallery import GalleryViewSet
+
+
+# from . import views
+
+
+router = routers.DefaultRouter()
+router.register(r'galleries', GalleryViewSet)
+
+urlpatterns = router.urls
+
+urlpatterns += [
+    path('storage-backends/connect', ConnectStorageBackend.as_view()),
+    path('upload/drive', DriveUploadImage.as_view()),
+
+    # use a gallery
+    path('galleries/by-slug/<str:slug>', SingleGallery.as_view()),
+    path('galleries/<int:id>/toggle-publication', ToggleGalleryPublication.as_view()),
+
+    # use an image viewset with different filtering
+    # get (request.user, gallery_id)
+    path('galleries/<int:id>/images', GalleryImages.as_view()),
+    path('auth/user/gallery/images', CurrentUserGalleryImages.as_view()),
+
+    path('auth/user', CurrentUser.as_view()),
+    path('auth/user/gallery', CurrentUserGallery.as_view()),
 ]
