@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from base.models import Gallery
-from . import UserSerializer
+from base.models.gallery import Gallery
+from api.serializers import UserSerializer
 
 class GallerySerializer(serializers.ModelSerializer):
     user = UserSerializer()

@@ -1,10 +1,12 @@
+import uuid
 import magic
 import environ
 import requests
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
-from base.models import StorageBackend
+from base.models.storage_backend import StorageBackend
+from base.models.gallery import Gallery
 
 env = environ.Env()
 
@@ -69,6 +71,8 @@ def drive_create_folder(name, access_token, refresh_token, parent=None):
 
     print('Created folder for the new gallery:')
     print(folder)
+    if folder_id is None:
+        raise Exception('Could not create root folder')
 
     return folder['id']
 
@@ -106,41 +110,21 @@ def get_user_info(token):
     return res.json()
 
 
-
 def create_backend_storage_if_new(name, user, grant):
-    already_connected = StorageBackend.objects.filter(user__id=user.id).exists()
-
-    if already_connected:
-        return
-
-    folder_id = drive_create_folder(
-        'universal-photo-gallery',
-        grant['access_token'],
-        grant['refresh_token'],
-    )
-
-    if folder_id is None:
-        print('Could not create root folder')
-        return
-
-    storage_backend = StorageBackend()
-    storage_backend.name = name
-    storage_backend.meta = grant
-    storage_backend.root_folder_id = folder_id
-    storage_backend.user = user
-    storage_backend.save()
-
-    create_gallery(storage_backend, user)
 
     return storage_backend
 
-def create_gallery(storage_backend, user, gallery_name='My Gallery'):
+def create_gallery(storage_backend, user, gallery_name):
+    print("STORAGE BACKEND: {}".format(storage_backend))
+    import ipdb
+    ipdb.set_trace()
 
     gallery = Gallery()
     gallery.name = gallery_name
     gallery.slug = uuid.uuid4()
     gallery.storage_backend = storage_backend
     gallery.user = user
+
     # Create a folder for this gallery as a subfolder of the root folder
     folder_id = drive_create_folder(
         gallery.name,
@@ -150,8 +134,10 @@ def create_gallery(storage_backend, user, gallery_name='My Gallery'):
     )
 
     if folder_id is None:
+        #TODO this print statement will break in production
         print('Could not create folder for new gallery')
         return
 
     gallery.folder_id = folder_id
     gallery.save()
+    return gallery
