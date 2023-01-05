@@ -1,7 +1,10 @@
 import magic
 import environ
+import requests
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
+
+from base.models import StorageBackend
 
 env = environ.Env()
 
@@ -68,3 +71,87 @@ def drive_create_folder(name, access_token, refresh_token, parent=None):
     print(folder)
 
     return folder['id']
+
+def exchange_authorization_code_for_access_token(code):
+    url = 'https://accounts.google.com/o/oauth2/token'
+    grandType = 'authorization_code'
+
+    payload = {
+        'client_id': env('GOOGLE_CLIENT_ID'),
+        'client_secret': env('GOOGLE_CLIENT_SECRET'),
+        'grant_type': grandType,
+        'redirect_uri': env('GOOGLE_REDIRECT_URL'),
+        'code': code
+    }
+
+    res = requests.post(url=url, params=payload)
+
+    if res.status_code != 200:
+        return
+
+    return res.json()
+
+
+def get_user_info(token):
+    url = 'https://www.googleapis.com/oauth2/v1/userinfo'
+    headers = {
+        'Authorization': 'Bearer ' + token
+    }
+
+    res = requests.get(url=url, headers=headers)
+
+    if res.status_code != 200:
+        return
+
+    return res.json()
+
+
+
+def create_backend_storage_if_new(name, user, grant):
+    already_connected = StorageBackend.objects.filter(user__id=user.id).exists()
+
+    if already_connected:
+        return
+
+    folder_id = drive_create_folder(
+        'universal-photo-gallery',
+        grant['access_token'],
+        grant['refresh_token'],
+    )
+
+    if folder_id is None:
+        print('Could not create root folder')
+        return
+
+    storage_backend = StorageBackend()
+    storage_backend.name = name
+    storage_backend.meta = grant
+    storage_backend.root_folder_id = folder_id
+    storage_backend.user = user
+    storage_backend.save()
+
+    create_gallery(storage_backend, user)
+
+    return storage_backend
+
+def create_gallery(storage_backend, user, gallery_name='My Gallery'):
+
+    gallery = Gallery()
+    gallery.name = gallery_name
+    gallery.slug = uuid.uuid4()
+    gallery.storage_backend = storage_backend
+    gallery.user = user
+    # Create a folder for this gallery as a subfolder of the root folder
+    folder_id = drive_create_folder(
+        gallery.name,
+        storage_backend.meta['access_token'],
+        storage_backend.meta['refresh_token'],
+        storage_backend.root_folder_id
+    )
+
+    if folder_id is None:
+        print('Could not create folder for new gallery')
+        return
+
+    gallery.folder_id = folder_id
+    gallery.save()

@@ -37,3 +37,25 @@ class User(AbstractBaseUser):
                 name='users.auth_provider_name_auth_provider_user_id_unique'
             )
         ]
+
+
+
+def find_or_create_user(auth_provider_name, user_data):
+    user = User.objects.filter(
+        auth_provider_name=auth_provider_name,
+        auth_provider_user_id=user_data['id']
+    ).first()
+
+    if user is None:
+        password = User.objects.make_random_password()
+        user = User()
+        user.password = password
+        user.auth_provider_name = auth_provider_name
+        user.auth_provider_user_id = user_data['id']
+        user.first_name = user_data['given_name']
+        user.last_name = user_data['family_name']
+        user.profile_picture_url = user_data['picture']
+        user.email = user_data['email']
+        user.save()
+
+    return user
