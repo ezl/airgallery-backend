@@ -11,6 +11,3 @@ class Gallery(models.Model):
     user = models.ForeignKey(User, on_delete = models.CASCADE)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta():
-        db_table = 'galleries'

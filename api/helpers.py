@@ -69,9 +69,7 @@ def drive_create_folder(name, access_token, refresh_token, parent=None):
 
     folder = service.files().create(body=file_metadata, fields='id').execute()
 
-    print('Created folder for the new gallery:')
-    print(folder)
-    if folder_id is None:
+    if folder['id'] is None:
         raise Exception('Could not create root folder')
 
     return folder['id']
@@ -110,15 +108,7 @@ def get_user_info(token):
     return res.json()
 
 
-def create_backend_storage_if_new(name, user, grant):
-
-    return storage_backend
-
 def create_gallery(storage_backend, user, gallery_name):
-    print("STORAGE BACKEND: {}".format(storage_backend))
-    import ipdb
-    ipdb.set_trace()
-
     gallery = Gallery()
     gallery.name = gallery_name
     gallery.slug = uuid.uuid4()
@@ -140,4 +130,5 @@ def create_gallery(storage_backend, user, gallery_name):
 
     gallery.folder_id = folder_id
     gallery.save()
+
     return gallery
