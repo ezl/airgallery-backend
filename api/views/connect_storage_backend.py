@@ -1,12 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from base.models import User, Gallery
 from base.models.user import find_or_create_user
 from rest_framework_simplejwt.tokens import RefreshToken
-import environ
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
 from api.helpers import (
         get_drive_service,
         drive_create_folder,
@@ -18,9 +14,6 @@ from api.helpers import (
 
 
 import uuid
-
-
-env = environ.Env()
 
 class ConnectStorageBackend(APIView):
     authentication_classes = []
