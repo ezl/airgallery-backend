@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from base.models import Gallery
-from ..helpers import fetchGalleryImages
+from base.models.gallery import Gallery
+from api.helpers import fetchGalleryImages
 
 class GalleryImages(APIView):
     authentication_classes = []

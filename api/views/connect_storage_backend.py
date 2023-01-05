@@ -1,19 +1,19 @@
+from django.contrib.auth.models import User
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from base.models.user import find_or_create_user
 from rest_framework_simplejwt.tokens import RefreshToken
+from base.models.storage_backend import StorageBackend
+from base.models.user_profile import UserProfile
 from api.helpers import (
         get_drive_service,
         drive_create_folder,
         exchange_authorization_code_for_access_token,
         get_user_info,
-        create_backend_storage_if_new,
         create_gallery
     )
 
 
-import uuid
 
 class ConnectStorageBackend(APIView):
     authentication_classes = []
@@ -35,19 +35,40 @@ class ConnectStorageBackend(APIView):
                  status=status.HTTP_400_BAD_REQUEST
             )
 
-
         user_info = get_user_info(grant['access_token'])
 
         if user_info is None:
             return Response('Could not get user info', status=status.HTTP_400_BAD_REQUEST)
 
-        user = find_or_create_user('google', user_info)
+        user, user_created = User.objects.get_or_create(username=user_info['email'])
+        if user_created is True:
+            user.first_name = user_info['given_name']
+            user.last_name = user_info['family_name']
+            user.email = user.username
+            user.save()
 
-        create_backend_storage_if_new(
-            'google-drive',
-            user,
-            grant
-        )
+            user_profile = UserProfile.objects.create(
+                    user=user,
+                    auth_provider_name='google',
+                    auth_provider_user_id=user_info['id'],
+                    profile_picture_url=user_info['picture']
+                )
+
+        if not StorageBackend.objects.filter(user=user).exists():
+            folder_id = drive_create_folder(
+                'universal-photo-gallery',
+                grant['access_token'],
+                grant['refresh_token'],
+                )
+
+            storage_backend = StorageBackend.objects.create(
+                user=user,
+                name='google-drive',
+                root_folder_id=folder_id,
+                meta=grant
+                )
+
+            gallery = create_gallery(storage_backend, user, gallery_name='My Gallery')
 
         refreshToken = RefreshToken.for_user(user)
 
