@@ -5,8 +5,8 @@ import requests
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
-from base.models.storage_backend import StorageBackend
-from base.models.gallery import Gallery
+from storage_backends.models import StorageBackend
+from galleries.models import Gallery
 
 env = environ.Env()
 

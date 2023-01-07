@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from base.models.gallery import Gallery
+from galleries.models import Gallery
 from api.serializers import GallerySerializer
 
 class SingleGallery(APIView):
