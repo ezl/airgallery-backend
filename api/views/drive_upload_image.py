@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.models import User
-from base.models.storage_backend import StorageBackend
+from storage_backends.models import StorageBackend
 from base.models.gallery import Gallery
 from base.models.image import Image
 from api.helpers import get_drive_service, get_mime_type, drive_create_folder
