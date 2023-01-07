@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from base.models.gallery import Gallery
+from galleries.models import Gallery
 from api.helpers import fetchGalleryImages
 
 class GalleryImages(APIView):

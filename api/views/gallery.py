@@ -1,7 +1,7 @@
 from rest_framework import viewsets
 from rest_framework import permissions
 
-from base.models.gallery import Gallery
+from galleries.models import Gallery
 from api.serializers.gallery_serializer import GallerySerializer
 
 

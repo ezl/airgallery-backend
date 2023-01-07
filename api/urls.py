@@ -13,9 +13,6 @@ from api.views.toggle_gallery_publication import ToggleGalleryPublication
 from api.views.gallery import GalleryViewSet
 
 
-# from . import views
-
-
 router = routers.DefaultRouter()
 router.register(r'galleries', GalleryViewSet)
 

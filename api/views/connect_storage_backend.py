@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from storage_backends.models import StorageBackend
-from base.models.user_profile import UserProfile
+from user_profiles.models import UserProfile
 from api.helpers import (
         get_drive_service,
         drive_create_folder,
