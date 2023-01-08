@@ -6,6 +6,7 @@ from django.utils import timezone
 
 class ToggleGalleryPublication(APIView):
     def patch(self, request, id):
+        raise Exception("TODO: Eric remove this. replacement already made")
         gallery = request.user.gallery_set.filter(id=id).first()
         
         if gallery is None:

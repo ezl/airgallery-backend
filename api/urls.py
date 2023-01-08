@@ -16,8 +16,8 @@ urlpatterns = [
     path('upload/drive', DriveUploadImage.as_view()),
 
     # use a gallery
-    path('galleries/by-slug/<str:slug>', SingleGallery.as_view()),
-    path('galleries/<int:id>/toggle-publication', ToggleGalleryPublication.as_view()),
+    path('galleries/by-slug/<str:slug>', SingleGallery.as_view()), #replacement view has been created (not in use)
+    path('galleries/<int:id>/toggle-publication', ToggleGalleryPublication.as_view()), # replacement view has been created (and is in use)
 
     # use an image viewset with different filtering
     # get (request.user, gallery_id)
