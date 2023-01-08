@@ -1,7 +1,5 @@
 from django.urls import path
 
-from rest_framework import routers
-
 from api.views.connect_storage_backend import ConnectStorageBackend
 from api.views.current_user import CurrentUser
 from api.views.drive_upload_image import DriveUploadImage
@@ -10,15 +8,10 @@ from api.views.single_gallery import SingleGallery
 from api.views.current_user_gallery import CurrentUserGallery
 from api.views.current_user_gallery_images import CurrentUserGalleryImages
 from api.views.toggle_gallery_publication import ToggleGalleryPublication
-from api.views.gallery import GalleryViewSet
 
 
-router = routers.DefaultRouter()
-router.register(r'galleries', GalleryViewSet)
 
-urlpatterns = router.urls
-
-urlpatterns += [
+urlpatterns = [
     path('storage-backends/connect', ConnectStorageBackend.as_view()),
     path('upload/drive', DriveUploadImage.as_view()),
 
