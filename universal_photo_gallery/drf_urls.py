@@ -9,7 +9,7 @@ router = routers.DefaultRouter()
 router.register(r'galleries', GalleryViewSet)
 router.register(r'images', ImageViewSet)
 router.register(r'users', UserViewSet)
-router.register(r'storage_backends', StorageBackendViewSet)
+router.register(r'backends', StorageBackendViewSet)
 
 urlpatterns = router.urls
 
