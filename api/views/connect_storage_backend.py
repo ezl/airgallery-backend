@@ -1,3 +1,5 @@
+import uuid
+import environ
 from django.contrib.auth.models import User
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -5,42 +7,26 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from storage_backends.models import StorageBackend
 from user_profiles.models import UserProfile
-from api.helpers import (
-        get_drive_service,
-        drive_create_folder,
-        exchange_authorization_code_for_access_token,
-        get_user_info,
-        create_gallery
-    )
 
+from api.helpers import Google
 
+env = environ.Env()
 
 class ConnectStorageBackend(APIView):
     authentication_classes = []
     permission_classes = []
 
     def post(self, request, format=None):
+        google = Google(
+                    env('GOOGLE_CLIENT_ID'),
+                    env('GOOGLE_CLIENT_SECRET')
+                    )
 
-        grant = exchange_authorization_code_for_access_token(request.data['code'])
+        auth_data = google.authenticate(request.data['code'])
 
-        if grant is None:
-            return Response('Invalid code', status=status.HTTP_400_BAD_REQUEST)
-
-        # Let the client know the user didn’t grant us access to his Drive
-        if 'https://www.googleapis.com/auth/drive' not in grant['scope']:
-            return Response(
-                {
-                'missing_permission_google_dive': True,
-                },
-                 status=status.HTTP_400_BAD_REQUEST
-            )
-
-        user_info = get_user_info(grant['access_token'])
-
-        if user_info is None:
-            return Response('Could not get user info', status=status.HTTP_400_BAD_REQUEST)
-
+        user_info = google.get_user_info()
         user, user_created = User.objects.get_or_create(username=user_info['email'])
+
         if user_created is True:
             user.first_name = user_info['given_name']
             user.last_name = user_info['family_name']
@@ -55,20 +41,27 @@ class ConnectStorageBackend(APIView):
                 )
 
         if not StorageBackend.objects.filter(user=user).exists():
-            folder_id = drive_create_folder(
-                'universal-photo-gallery',
-                grant['access_token'],
-                grant['refresh_token'],
-                )
-
+            # create the root folder
+            root_folder_id = google.create_folder('universal-photo-gallery')
             storage_backend = StorageBackend.objects.create(
                 user=user,
                 name='google-drive',
-                root_folder_id=folder_id,
-                meta=grant
+                root_folder_id=root_folder_id,
+                meta=auth_data
                 )
 
-            gallery = create_gallery(storage_backend, user, gallery_name='My Gallery')
+            # create the gallery folder inside the root of google drive
+
+            # TODO: need to make gallery creation and folder creation happen together as a transaction
+            gallery_name = 'My Gallery'
+            gallery_folder_id = storage_backend.create_folder('universal-photo-gallery')
+            gallery = Gallery.objects.create(
+                    user=user,
+                    name=gallery_name,
+                    storage_backend=storage_backend,
+                    folder_id=gallery_folder_id,
+                    slug=uuid.uuid4()
+                    )
 
         refreshToken = RefreshToken.for_user(user)
 

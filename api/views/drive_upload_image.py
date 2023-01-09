@@ -5,7 +5,9 @@ from django.contrib.auth.models import User
 from storage_backends.models import StorageBackend
 from galleries.models import Gallery
 from galleries.models import Image
-from api.helpers import get_drive_service, get_mime_type, drive_create_folder
+# from api.helpers import get_drive_service, drive_create_folder
+from api.helpers import get_mime_type
+from api.helpers import Google
 import io
 
 from googleapiclient.errors import HttpError
