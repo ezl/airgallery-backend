@@ -9,16 +9,16 @@ from django_extensions.db.models import TimeStampedModel
 
 env = environ.Env()
 
+
 class StorageBackend(TimeStampedModel):
     name = models.CharField(max_length=255)
-    meta = models.JSONField() #TODO: do we actually need this?
+    meta = models.JSONField()
     root_folder_id = models.CharField(max_length=255)
     user = models.ForeignKey(User, on_delete = models.CASCADE)
 
-    def get_drive_service(self):
-        ACCESS_TOKEN = self.meta.get('access_token')
-        REFRESH_TOKEN = self.meta.get('refresh_token')
-        CLIENT_SECRET = env
+    def get_drive_service(self, access_token=None, refresh_token=None):
+        ACCESS_TOKEN = access_token or self.meta.get('access_token')
+        REFRESH_TOKEN = refresh_token or self.meta.get('refresh_token')
 
         if (ACCESS_TOKEN is None) or (REFRESH_TOKEN is None):
             raise Exception("No access or refresh token: Unable to get drive service.")
@@ -44,7 +44,7 @@ class StorageBackend(TimeStampedModel):
         if parent is not None:
             file_metadata['parents'] = [parent]
 
-        folder = service.files().create(body=file_metadata, fields='id').execute()
+        folder = drive_service.files().create(body=file_metadata, fields='id').execute()
 
         if folder['id'] is None:
             raise Exception('Could not create root folder')

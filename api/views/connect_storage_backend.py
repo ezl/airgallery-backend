@@ -7,6 +7,7 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from storage_backends.models import StorageBackend
 from user_profiles.models import UserProfile
+from galleries.models import Gallery
 
 from api.helpers import Google
 
@@ -42,13 +43,15 @@ class ConnectStorageBackend(APIView):
 
         if not StorageBackend.objects.filter(user=user).exists():
             # create the root folder
-            root_folder_id = google.create_folder('universal-photo-gallery')
-            storage_backend = StorageBackend.objects.create(
+            storage_backend = StorageBackend(
                 user=user,
                 name='google-drive',
-                root_folder_id=root_folder_id,
                 meta=auth_data
                 )
+            ROOT_FOLDER_NAME = 'universal-photo-gallery'
+            root_folder_id = storage_backend.create_folder(ROOT_FOLDER_NAME)
+            storage_backend.root_folder_id = root_folder_id
+            storage_backend.save()
 
             # create the gallery folder inside the root of google drive
 
