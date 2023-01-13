@@ -30,6 +30,26 @@ class Gallery(TimeStampedModel):
     slug = models.CharField(max_length=250) #will we want to autoslugify this thing?
     published_at = models.DateTimeField(blank=True, null=True) #questionable whether we'll keep this field, at least like this
 
+    def add_image(self, target_file):
+        '''
+        Need to:
+        (A) upload the image to remote storage
+        (B) create the image object with meta data
+        '''
+        # Upload the image
+        image_file = self.storage_backend.upload_image(target_file, self)
+
+        # Create the image asset
+        image = Image.objects.create(
+            name           = image_file['name'],
+            file_id        = image_file['id'],
+            width          = image_file['imageMediaMetadata']['width'],
+            height         = image_file['imageMediaMetadata']['height'],
+            mime_type      = image_file['mimeType'],
+            gallery        = self
+            )
+        return image
+
     def fetch_images(self):
         """
         Retrieve image files from this gallery’s remote storage folder
@@ -51,3 +71,4 @@ class Image(models.Model):
     height = models.IntegerField()
     mime_type = models.CharField(max_length=250)
     # future probably adding attributes for the google path, references to other things like thumbnails, optimized versions, likes, comments
+

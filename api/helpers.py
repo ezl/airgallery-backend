@@ -1,4 +1,3 @@
-import magic
 import requests
 
 from storage_backends.models import StorageBackend
@@ -80,18 +79,6 @@ class Google(object):
         self.user_info = data
         print(self.user_info)
         return self.user_info
-
-
-
-def get_mime_type(file):
-    """
-    Get MIME by reading the header of the file
-    """
-    initial_pos = file.tell()
-    file.seek(0)
-    mime_type = magic.from_buffer(file.read(2048), mime=True)
-    file.seek(initial_pos)
-    return mime_type
 
 
 

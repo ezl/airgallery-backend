@@ -1,4 +1,9 @@
+import magic
+import io
 import environ
+
+from googleapiclient.errors import HttpError
+from googleapiclient.http import MediaIoBaseUpload
 
 from django.db import models
 from django.contrib.auth.models import User
@@ -51,3 +56,33 @@ class StorageBackend(TimeStampedModel):
 
         return folder['id']
 
+    def upload_image(self, target_file, gallery):
+        drive_service = self.get_drive_service()
+
+        file_metadata = {
+            'name': target_file.name,
+            'parents': [gallery.folder_id]
+        }
+
+        f = io.BytesIO(target_file.read())
+        media = MediaIoBaseUpload(f, mimetype=get_mime_type(f))
+
+        file = drive_service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields='id, name, imageMediaMetadata, mimeType, thumbnailLink'
+        ).execute()
+
+        print(file)
+        return file
+
+
+def get_mime_type(file):
+    """
+    Get MIME by reading the header of the file
+    """
+    initial_pos = file.tell()
+    file.seek(0)
+    mime_type = magic.from_buffer(file.read(2048), mime=True)
+    file.seek(initial_pos)
+    return mime_type
