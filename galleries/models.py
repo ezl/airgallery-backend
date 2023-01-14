@@ -63,7 +63,7 @@ class Gallery(TimeStampedModel):
         return files
 
 
-class Image(models.Model):
+class Image(TimeStampedModel):
     name = models.CharField(max_length=250)
     gallery = models.ForeignKey(Gallery, on_delete = models.CASCADE)
     height = models.IntegerField()
