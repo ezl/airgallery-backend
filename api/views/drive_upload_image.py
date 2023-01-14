@@ -10,6 +10,7 @@ from galleries.models import Image
 
 class DriveUploadImage(APIView):
     def put(self, request):
+        print("1" * 50)
         gallery = Gallery.objects.filter(user__id=request.user.id).prefetch_related('storage_backend').first()
 
         if gallery is None:
