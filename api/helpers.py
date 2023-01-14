@@ -1,134 +1,91 @@
-import uuid
-import magic
-import environ
 import requests
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
 
 from storage_backends.models import StorageBackend
 from galleries.models import Gallery
 
+import environ
 env = environ.Env()
 
-def get_drive_service(access_token, refresh_token):
-    creds = Credentials(
-        token_uri='https://accounts.google.com/o/oauth2/token',
-        token=access_token,
-        refresh_token=refresh_token,
-        client_id= env('GOOGLE_CLIENT_ID'),
-        client_secret= env('GOOGLE_CLIENT_SECRET'),
-    )
 
-    service = build('drive', 'v3', credentials=creds)
+"""
+Steps in order:
+    1. exchange authorziation_code for access token
+    2. get_user_info
+"""
 
-    return service
+class Google(object):
+    def __init__(self, client_id, client_secret):
+        self.client_id = client_id
+        self.client_secret = client_secret
+        self.access_token = None
+        self.refresh_token = None
+        self.scope = []
+        self.user_info = {}
 
+    def authenticate(self, code):
+        """
+        Give Google an authorization code, get auth data in return.
+        """
+        url = 'https://accounts.google.com/o/oauth2/token'
+        grandType = 'authorization_code' #TODO: "grand type" seems fishy.
+        payload = {
+            'client_id': env('GOOGLE_CLIENT_ID'),
+            'client_secret': env('GOOGLE_CLIENT_SECRET'),
+            'grant_type': grandType,
+            'redirect_uri': env('GOOGLE_REDIRECT_URL'),
+            'code': code
+        }
+        response = requests.post(url=url, params=payload)
 
-def get_mime_type(file):
-    """
-    Get MIME by reading the header of the file
-    """
-    initial_pos = file.tell()
-    file.seek(0)
-    mime_type = magic.from_buffer(file.read(2048), mime=True)
-    file.seek(initial_pos)
-    return mime_type
+        if response.status_code != 200:
+            raise Exception("Unable to authenticate via Google: {}".format(response))
 
-def fetchGalleryImages(gallery):
-    """
-    Retrieve image files from this gallery’s folder
-    """
+        data = response.json()
+        self.scope = data['scope']
+        self.access_token= data['access_token']
 
-    service = get_drive_service(
-        gallery.storage_backend.meta['access_token'],
-        gallery.storage_backend.meta['refresh_token'],
-    )
+        if not self.has_required_scope():
+            raise Exception('Missing required scope: auth/drive')
 
-    query = f"parents = '{gallery.folder_id}'"
-    fields = 'files(id, name, imageMediaMetadata, thumbnailLink)'
+        return data
 
-    res = service.files().list(q=query, fields=fields).execute()
-
-    files = res.get('files', [])
-
-    return files
-
-def drive_create_folder(name, access_token, refresh_token, parent=None):
-    service = get_drive_service(
-        access_token,
-        refresh_token,
-    )
-
-    file_metadata = {
-        'name': name,
-        'mimeType': 'application/vnd.google-apps.folder',
-    }
-
-    if parent is not None:
-        file_metadata['parents'] = [parent]
-
-    folder = service.files().create(body=file_metadata, fields='id').execute()
-
-    if folder['id'] is None:
-        raise Exception('Could not create root folder')
-
-    return folder['id']
-
-def exchange_authorization_code_for_access_token(code):
-    url = 'https://accounts.google.com/o/oauth2/token'
-    grandType = 'authorization_code'
-
-    payload = {
-        'client_id': env('GOOGLE_CLIENT_ID'),
-        'client_secret': env('GOOGLE_CLIENT_SECRET'),
-        'grant_type': grandType,
-        'redirect_uri': env('GOOGLE_REDIRECT_URL'),
-        'code': code
-    }
-
-    res = requests.post(url=url, params=payload)
-
-    if res.status_code != 200:
-        return
-
-    return res.json()
+    def has_required_scope(self):
+        """
+        Check to see if our current instance has the required scope
+        in order to function for this gallery (basically Google Drive
+        access)
+        """
+        REQUIRED_SCOPES = [
+            'https://www.googleapis.com/auth/drive'
+            ]
+        return all([item in self.scope for item in REQUIRED_SCOPES])
 
 
-def get_user_info(token):
-    url = 'https://www.googleapis.com/oauth2/v1/userinfo'
-    headers = {
-        'Authorization': 'Bearer ' + token
-    }
+    def get_user_info(self):
+        if self.access_token is None:
+            raise Exception("Not authenticated")
 
-    res = requests.get(url=url, headers=headers)
+        url = 'https://www.googleapis.com/oauth2/v1/userinfo'
+        headers = {
+            'Authorization': 'Bearer ' + self.access_token
+        }
 
-    if res.status_code != 200:
-        return
+        response = requests.get(url=url, headers=headers)
 
-    return res.json()
+        if response.status_code != 200:
+            raise Exception("Unable to get Google user info")
+
+        data = response.json()
+        self.user_info = data
+        print(self.user_info)
+        '''
+        Example data:
+        {'id': '115675522907727282422', 'email': 'ericzliu@gmail.com', 'verified_email': True,
+        'name': 'E Liu', 'given_name': 'E', 'family_name': 'Liu',
+        'picture': 'https://lh3.googleusercontent.com/a/AEdFTp5FT1V
+        VAaTSRGSSikREKGmJKjKW7jrpFmIPZafRag=s96-c', 'locale': 'en'}
+        '''
+        return self.user_info
 
 
-def create_gallery(storage_backend, user, gallery_name):
-    gallery = Gallery()
-    gallery.name = gallery_name
-    gallery.slug = uuid.uuid4()
-    gallery.storage_backend = storage_backend
-    gallery.user = user
 
-    # Create a folder for this gallery as a subfolder of the root folder
-    folder_id = drive_create_folder(
-        gallery.name,
-        storage_backend.meta['access_token'],
-        storage_backend.meta['refresh_token'],
-        storage_backend.root_folder_id
-    )
-
-    if folder_id is None:
-        #TODO this print statement will break in production
-        print('Could not create folder for new gallery')
-        return
-
-    gallery.folder_id = folder_id
-    gallery.save()
-
-    return gallery
