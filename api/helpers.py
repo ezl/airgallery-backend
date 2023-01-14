@@ -78,6 +78,13 @@ class Google(object):
         data = response.json()
         self.user_info = data
         print(self.user_info)
+        '''
+        Example data:
+        {'id': '115675522907727282422', 'email': 'ericzliu@gmail.com', 'verified_email': True,
+        'name': 'E Liu', 'given_name': 'E', 'family_name': 'Liu',
+        'picture': 'https://lh3.googleusercontent.com/a/AEdFTp5FT1V
+        VAaTSRGSSikREKGmJKjKW7jrpFmIPZafRag=s96-c', 'locale': 'en'}
+        '''
         return self.user_info
 
 
