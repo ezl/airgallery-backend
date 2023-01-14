@@ -64,11 +64,11 @@ class Gallery(TimeStampedModel):
 
 
 class Image(models.Model):
-    gallery = models.ForeignKey(Gallery, on_delete = models.CASCADE)
     name = models.CharField(max_length=250)
-    file_id = models.CharField(max_length=250) # TODO:file_id will probably generalized to something else if we go to multiple storage backends
-    width = models.IntegerField()
+    gallery = models.ForeignKey(Gallery, on_delete = models.CASCADE)
     height = models.IntegerField()
+    width = models.IntegerField()
+    file_id = models.CharField(max_length=250) # TODO:file_id will probably generalized to something else if we go to multiple storage backends
     mime_type = models.CharField(max_length=250) # TODO:mime_Type -- why is this necessary? If generalized, will this live in some other metadata json blob?
     # future probably adding attributes for the google path, references to other things like thumbnails, optimized versions, likes, comments
 
