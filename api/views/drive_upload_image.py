@@ -9,8 +9,7 @@ from galleries.models import Image
 
 
 class DriveUploadImage(APIView):
-    def put(self, request):
-        print("1" * 50)
+    def post(self, request):
         gallery = Gallery.objects.filter(user__id=request.user.id).prefetch_related('storage_backend').first()
 
         if gallery is None:
@@ -19,7 +18,7 @@ class DriveUploadImage(APIView):
         file = request.FILES['image']
 
         new_file = gallery.add_image(file)
-
-        return Response(data=new_file)
+        data = {'status': 'success'}
+        return Response(data, status=200)
 
 
