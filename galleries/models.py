@@ -20,8 +20,6 @@ from storage_backends.models import StorageBackend
 #
 #         return super().create(**obj_data)
 
-
-
 class Gallery(TimeStampedModel):
     user = models.ForeignKey(User, on_delete = models.CASCADE)
     name = models.CharField(max_length=250)

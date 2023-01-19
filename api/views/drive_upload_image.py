@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
 from storage_backends.models import StorageBackend
 from galleries.models import Gallery
 from galleries.models import Image
@@ -10,13 +11,10 @@ from galleries.models import Image
 
 class DriveUploadImage(APIView):
     def post(self, request):
-        gallery = Gallery.objects.filter(user__id=request.user.id).prefetch_related('storage_backend').first()
-
-        if gallery is None:
-            return Response('Default gallery not found', status=status.HTTP_404_NOT_FOUND)
+        gallery_slug = request.POST.get("gallery_slug")
+        gallery = get_object_or_404(Gallery, slug=gallery_slug)
 
         file = request.FILES['image']
-
         new_file = gallery.add_image(file)
         data = {'status': 'success'}
         return Response(data, status=200)
