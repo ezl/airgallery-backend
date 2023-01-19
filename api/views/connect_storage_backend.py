@@ -57,7 +57,7 @@ class ConnectStorageBackend(APIView):
 
             # TODO: need to make gallery creation and folder creation happen together as a transaction
             gallery_name = 'My Gallery'
-            gallery_folder_id = storage_backend.create_folder('universal-photo-gallery')
+            gallery_folder_id = storage_backend.create_folder(gallery_name, parent=root_folder_id)
             gallery = Gallery.objects.create(
                     user=user,
                     name=gallery_name,
