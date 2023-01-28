@@ -12,11 +12,13 @@ from galleries.models import Image
 class DriveUploadImage(APIView):
     def post(self, request):
         gallery_slug = request.POST.get("gallery_slug")
-        gallery = get_object_or_404(Gallery, slug=gallery_slug)
 
-        file = request.FILES['image']
+        # gallery = get_object_or_404(Gallery, slug=gallery_slug)
+        gallery = Gallery.objects.all()[0]
+
+        file = request.FILES.get('file')
+
         new_file = gallery.add_image(file)
-        data = {'status': 'success'}
-        return Response(data, status=200)
+        return Response(data=new_file)
 
 
