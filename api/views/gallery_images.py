@@ -15,6 +15,6 @@ class GalleryImages(APIView):
         if gallery is None:
             return Response(data=[])
 
-        files = gallery.fetch_images
+        files = gallery.fetch_images()
 
         return Response(data=files)
