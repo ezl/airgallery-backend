@@ -3,7 +3,7 @@ from rest_framework import viewsets
 from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.decorators import action
-
+from galleries.filters import ImageFilter
 from galleries.models import Gallery, Image
 from galleries.serializers import GallerySerializer, ImageSerializer
 
@@ -35,4 +35,25 @@ class ImageViewSet(viewsets.ModelViewSet):
     queryset = Image.objects.all()
     serializer_class = ImageSerializer
     permission_classes = [permissions.AllowAny]
+    filterset_class = ImageFilter
+
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        serialized_images = serializer.data
+        
+        for image_data in serialized_images:
+            file_id = image_data['file_id']
+
+            thumbnail_url = google_service.fetch_file_metadata(file_id)
+            image_data['thumbnail_url'] = thumbnail_url
+            
+        return Response(serializer.data)
 

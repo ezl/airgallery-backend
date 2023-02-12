@@ -70,3 +70,4 @@ class Image(TimeStampedModel):
     mime_type = models.CharField(max_length=250) # TODO:mime_Type -- why is this necessary? If generalized, will this live in some other metadata json blob?
     # future probably adding attributes for the google path, references to other things like thumbnails, optimized versions, likes, comments
 
+

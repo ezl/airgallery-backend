@@ -9,7 +9,7 @@ class SingleGallery(APIView):
     permission_classes = []
 
     def get(self, request, slug):
-        raise Exception("TODO: note to Eric to remove this. This has been replaced by a ModelViewSet in the Gallery app")
+        # raise Exception("TODO: note to Eric to remove this. This has been replaced by a ModelViewSet in the Gallery app")
         gallery = Gallery.objects.filter(
             slug=slug,
             published_at__isnull=False
