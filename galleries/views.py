@@ -5,14 +5,38 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from galleries.filters import ImageFilter
 from galleries.models import Gallery, Image
-from galleries.serializers import GallerySerializer, ImageSerializer
+from galleries.serializers import GallerySerializer, ImageSerializer, GalleryCreateSerializer, GalleryUpdateSerializer
 
 
 class GalleryViewSet(viewsets.ModelViewSet):
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return GallerySerializer
+        elif self.request.method == 'POST':
+            return GalleryCreateSerializer
+        elif self.request.method in ['PUT', 'PATCH']:
+            return GalleryUpdateSerializer
+
     queryset = Gallery.objects.all()
-    serializer_class = GallerySerializer
     permission_classes = [permissions.AllowAny]
     lookup_field = 'slug' #TODO: rename to uuid, this field isn't actually a slug
+
+    def create(self, request, *args, **kwargs):
+        ## TODO - Eric
+        #WIP: made with Robert. Not in use.
+        serializer = GalleryCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        Gallery.objects.create(
+            name=serializer.validated_data['name'], 
+            slug=serializer.validated_data['name'].lower(), 
+            user=request.user
+        )
+ 
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
 
     @action(detail=True, methods=['patch'])
     def publish(self, request, slug=None):
@@ -39,6 +63,7 @@ class ImageViewSet(viewsets.ModelViewSet):
 
 
     def list(self, request, *args, **kwargs):
+        
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
 
