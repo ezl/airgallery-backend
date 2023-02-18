@@ -26,6 +26,7 @@ class Gallery(TimeStampedModel):
     storage_backend = models.ForeignKey(to=StorageBackend, on_delete = models.CASCADE)
     folder_id = models.CharField(max_length=250)
     slug = models.CharField(max_length=250) #will we want to autoslugify this thing?
+    is_published = models.BooleanField(default=True)
     published_at = models.DateTimeField(blank=True, null=True) #questionable whether we'll keep this field, at least like this
 
     def add_image(self, target_file):
