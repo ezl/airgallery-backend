@@ -27,13 +27,13 @@ class GalleryViewSet(viewsets.ModelViewSet):
         #WIP: made with Robert. Not in use.
         serializer = GalleryCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         Gallery.objects.create(
-            name=serializer.validated_data['name'], 
-            slug=serializer.validated_data['name'].lower(), 
+            name=serializer.validated_data['name'],
+            slug=serializer.validated_data['name'].lower(),
             user=request.user
         )
- 
+
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
@@ -61,9 +61,7 @@ class ImageViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.AllowAny]
     filterset_class = ImageFilter
 
-
     def list(self, request, *args, **kwargs):
-        
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
 
@@ -73,12 +71,33 @@ class ImageViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(queryset, many=True)
         serialized_images = serializer.data
-        
+
+        # We need to get thumbnail urls.
+        # to do that, we need to query on the specific folder, which
+        # means we need to go up to the gallery (otherwise it'll
+        # search the user's entire google drive)
+
+        # alternatively need a way to do a bulk search for a list of
+        # file ids, but i couldn't find documentation for that
+
+        gallery_id = request.query_params.get('gallery')
+        gallery = Gallery.objects.get(id=gallery_id)
+
+        # returns google's representation, which includes a thumbnail link
+        google_drive_images = gallery.fetch_image_thumbnails()
+
+        # TODO: OK this is the big sin. We need to get the thumbnail links into
+        # the response. Doing this VERY inefficiently and won't make sense.
+        # SHOULD be using a batch operation to get these from the ids then using a callback
+        # but instead doing this stupid thing.
+        # https://github.com/googleapis/google-api-python-client/blob/main/docs/batch.md
+
         for image_data in serialized_images:
             file_id = image_data['file_id']
+            google_object = next((item for item in google_drive_images if item.get('id') == file_id), None)
+            # get the google object that corresponds to the same object from the Image table (matched on google file id)
+            thumbnail_link = google_object['thumbnailLink']
+            image_data['thumbnail_link'] = thumbnail_link
 
-            thumbnail_url = google_service.fetch_file_metadata(file_id)
-            image_data['thumbnail_url'] = thumbnail_url
-            
         return Response(serializer.data)
 

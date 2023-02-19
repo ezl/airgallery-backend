@@ -2,12 +2,17 @@ import django_filters
 from galleries.models import Image
 
 class ImageFilter(django_filters.rest_framework.FilterSet):
+    # TODO: Question for robert - conventionwise, would i want
+    # to call this GalleryFilter or something to indicate that
+    # this filter, for images, is actually doing a filter operation
+    # that is limiting it to the gallery?
+    # presumably there can be multiple ImageFilters that do
+    # different things?
     gallery = django_filters.CharFilter(required=True, method="filter_gallery_id")
 
     class Meta:
         model = Image
         fields = []
-
 
     def filter_gallery_id(self, queryset, name, value):
         if value == 'current_user':
