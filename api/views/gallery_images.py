@@ -7,6 +7,7 @@ class GalleryImages(APIView):
     permission_classes = []
 
     def get(self, request, id):
+        # raise Exception("TODO: Eric remove this. we should be using the DRF endpoint in the galleries model")
         gallery = Gallery.objects.filter(
             id=id,
             published_at__isnull=False
@@ -15,6 +16,6 @@ class GalleryImages(APIView):
         if gallery is None:
             return Response(data=[])
 
-        files = gallery.fetch_images()
+        files = gallery.fetch_image_thumbnails()
 
         return Response(data=files)

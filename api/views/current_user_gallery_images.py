@@ -9,5 +9,5 @@ class CurrentUserGalleryImages(APIView):
         if gallery is None:
             return Response(data=[])
 
-        files = gallery.fetch_images()
+        files = gallery.fetch_image_thumbnails()
         return Response(data=files)
