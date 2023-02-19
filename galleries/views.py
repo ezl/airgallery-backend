@@ -96,8 +96,9 @@ class ImageViewSet(viewsets.ModelViewSet):
             file_id = image_data['file_id']
             google_object = next((item for item in google_drive_images if item.get('id') == file_id), None)
             # get the google object that corresponds to the same object from the Image table (matched on google file id)
-            thumbnail_link = google_object['thumbnailLink']
-            image_data['thumbnail_link'] = thumbnail_link
+            image_data['thumbnailLink'] = google_object['thumbnailLink']
+            image_data['imageMediaMetadata'] = google_object['imageMediaMetadata']
+
 
         return Response(serializer.data)
 
