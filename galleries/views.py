@@ -22,6 +22,11 @@ class GalleryViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.AllowAny]
     lookup_field = 'slug' #TODO: rename to uuid, this field isn't actually a slug
 
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
     def create(self, request, *args, **kwargs):
         ## TODO - Eric
         #WIP: made with Robert. Not in use.

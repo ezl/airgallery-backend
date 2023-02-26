@@ -1,9 +1,10 @@
 from rest_framework import serializers
 
 from galleries.models import Gallery, Image
+from user_profiles.serializers import UserSerializer
 
 class GallerySerializer(serializers.HyperlinkedModelSerializer):
-    user = serializers.HyperlinkedRelatedField(view_name='user-detail', read_only=True)
+    user = UserSerializer()
 
     class Meta:
         model = Gallery
