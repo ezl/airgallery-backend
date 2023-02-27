@@ -4,7 +4,7 @@ from rest_framework import status
 
 class CurrentUserGalleryImages(APIView):
     def get(self, request):
-        raise Exception
+        #raise Exception
         gallery = request.user.gallery_set.prefetch_related('storage_backend').first()
 
         if gallery is None:

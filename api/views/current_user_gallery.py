@@ -5,7 +5,7 @@ from api.serializers import GallerySerializer
 
 class CurrentUserGallery(APIView):
     def get(self, request):
-        raise Exception
+        # raise Exception
         gallery = request.user.gallery_set.first()
         
         if gallery is None:

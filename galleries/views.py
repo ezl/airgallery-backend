@@ -3,12 +3,16 @@ from rest_framework import viewsets
 from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from galleries.filters import ImageFilter
+from galleries.filters import ImageFilter, GalleryFilter
 from galleries.models import Gallery, Image
 from galleries.serializers import GallerySerializer, ImageSerializer, GalleryCreateSerializer, GalleryUpdateSerializer
 
 
 class GalleryViewSet(viewsets.ModelViewSet):
+    queryset = Gallery.objects.all()
+    permission_classes = [permissions.AllowAny]
+    filterset_class = GalleryFilter
+    lookup_field = 'slug' #TODO: rename to uuid, this field isn't actually a slug
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
@@ -18,9 +22,6 @@ class GalleryViewSet(viewsets.ModelViewSet):
         elif self.request.method in ['PUT', 'PATCH']:
             return GalleryUpdateSerializer
 
-    queryset = Gallery.objects.all()
-    permission_classes = [permissions.AllowAny]
-    lookup_field = 'slug' #TODO: rename to uuid, this field isn't actually a slug
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
